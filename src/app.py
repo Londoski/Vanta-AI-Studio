@@ -1,6 +1,13 @@
 import tkinter as tk
-from tkinter import filedialog
+
+
 from PIL import Image, ImageTk
+
+from src.media import choose_image
+
+
+
+from src.sidebar import create_sidebar
 # ==========================
 # Create Main Window
 # ==========================
@@ -39,6 +46,8 @@ title.pack(side="left", padx=20, pady=10)
 body = tk.Frame(app, bg="#1E1E1E")
 body.pack(fill="both", expand=True)
 
+media_files = []
+current_image = None
 # ==========================
 # Left Sidebar
 # ==========================
@@ -71,31 +80,35 @@ buttons = [
     "📝 Captions",
     "⚙ Settings"
 ]
+def show_image(filename):
+
+    global current_image
+
+    image = Image.open(filename)
+
+    image.thumbnail((700, 500))
+
+    current_image = ImageTk.PhotoImage(image)
+
+    preview_label.config(image=current_image)
+
+    preview_label.image = current_image
+
+    status.config(text=f"Viewing: {filename}")
 def open_image():
 
-    filename = filedialog.askopenfilename(
-
-        title="Select an Image",
-
-        filetypes=[
-            ("Image Files", "*.png *.jpg *.jpeg *.bmp")
-        ]
-
-    )
+    filename = choose_image()
 
     if filename:
 
-        image = Image.open(filename)
+        media_files.append(filename)
 
-        image.thumbnail((700, 500))
+        media_list.insert(tk.END, filename.split("/")[-1])
 
-        photo = ImageTk.PhotoImage(image)
+        show_image(filename)
 
-        preview_label.config(image=photo)
-
-        preview_label.image = photo
-
-        status.config(text=f"Selected: {filename}")
+        status.config(text=f"Imported: {filename}")
+    
 for text in buttons:
     btn = tk.Button(
         sidebar,
@@ -108,11 +121,56 @@ for text in buttons:
         command=open_image if text == "📁 Images" else None
 )
     btn.pack(pady=6)
+# ==========================
+# Media Library
+# ==========================
+
+library = tk.Frame(
+    body,
+    bg="#2B2B2B",
+    width=220
+)
+
+library.pack(side="left", fill="y")
+
+library_title = tk.Label(
+    library,
+    text="MEDIA LIBRARY",
+    bg="#2B2B2B",
+    fg="white",
+    font=("Arial", 14, "bold")
+)
+
+library_title.pack(pady=10)
+
+media_list = tk.Listbox(
+    library,
+    bg="#3C3C3C",
+    fg="white",
+    width=30,
+    height=25
+)
+
+media_list.pack(padx=10, pady=10, fill="both", expand=True)
+
+def on_media_select(event):
+
+    selection = media_list.curselection()
+
+    if not selection:
+        return
+
+    index = selection[0]
+
+    filename = media_files[index]
+
+    show_image(filename)
+
+media_list.bind("<<ListboxSelect>>", on_media_select)
 
 # ==========================
 # Preview Area
 # ==========================
-
 preview = tk.Frame(
     body,
     bg="#333333"
